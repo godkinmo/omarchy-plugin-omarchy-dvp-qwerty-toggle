@@ -2,7 +2,7 @@
 
 ![Demo](demo.gif)
 
-![Screenshot](screenshot.png)
+![Screenshot](preview.png)
 
 An Omarchy bar widget that installs and toggles the two systemd **user** units
 behind the Dvorak + QWERTY overlay setup:
