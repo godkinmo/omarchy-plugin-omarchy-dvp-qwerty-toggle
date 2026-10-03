@@ -6,9 +6,10 @@ Programmer Dvorak (DVP) + QWERTY overlay setup:
 - `kanata.service` — the kanata keyboard remapper
 - `kanata-layer-watcher.service` — the fcitx5-driven DVP/QWERTY layer switcher
 
-One click starts both when stopped, or stops both when running, and the icon
-reflects live status. It talks to `systemctl --user`, so no privilege
-escalation is required.
+Clicking the bar glyph opens a small popup with one on/off switch that starts
+both units when off, or stops both when on; the switch and the bar icon reflect
+live status. It talks to `systemctl --user`, so no privilege escalation is
+required.
 
 ## Requirements
 
@@ -38,9 +39,11 @@ omarchy bar move godkin.omarchy-dvp-qwerty-toggle --section right
 
 | Action | Result |
 |--------|--------|
-| Left click | Stop both units if both are active, otherwise start both |
+| Left click | Open the popup with the on/off switch |
+| Switch | Stop both units if both are active, otherwise start both |
 | Hover | Tooltip shows `Kanata on` / `Kanata off` / `Kanata partial` / `Kanata: switching…` |
 | IPC | `omarchy-shell kanata-service toggle` toggles from anywhere |
+| IPC | `omarchy-shell kanata-service togglePanel` opens the popup |
 
 The widget can also be driven over IPC, so a keybinding can reuse it:
 
