@@ -1,6 +1,8 @@
 # Kanata Dvorak/QWERTY for Omarchy
 
-<video src="demo.mp4" controls muted loop width="100%"></video>
+![Demo](demo.gif)
+
+![Screenshot](screenshot.png)
 
 An Omarchy bar widget that installs and toggles the two systemd **user** units
 behind the Dvorak + QWERTY overlay setup:
