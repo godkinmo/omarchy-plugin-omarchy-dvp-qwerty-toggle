@@ -17,13 +17,12 @@ RESOURCES="${PLUGIN_DIR}/resources"
 KANATA_DIR="${HOME}/.config/kanata"
 UNIT_DIR="${HOME}/.config/systemd/user"
 UNITS=(kanata.service kanata-layer-watcher.service)
+DESKTOP_USER="${SUDO_USER:-${USER}}"
 
 step() { printf '\n\033[1;34m➜\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m⚠\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m✗\033[0m %s\n' "$*" >&2; exit 1; }
-
-in_groups() { id -nG | grep -qw -- "$1"; }
 
 ensure_group() { getent group "$1" >/dev/null 2>&1 || groupadd "$1"; }
 
@@ -80,10 +79,10 @@ install_root_files() {
 
   step "Granting the input and uinput groups"
   for grp in input uinput; do
-    if ! in_groups "$grp"; then
-      warn "adding ${USER} to the [${grp}] group"
+    if ! id -nG "${DESKTOP_USER}" | grep -qw -- "$grp"; then
+      warn "adding ${DESKTOP_USER} to the [${grp}] group"
       ensure_group "$grp"
-      usermod -aG "$grp" "$USER"
+      usermod -aG "$grp" "${DESKTOP_USER}"
     fi
   done
   ok "group membership is set"

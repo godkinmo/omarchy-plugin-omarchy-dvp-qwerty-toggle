@@ -5,21 +5,6 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// Kanata service toggle. The bar glyph opens a small popup with one on/off
-// switch that starts or stops both systemd user units behind the Dvorak +
-// QWERTY setup:
-//   - kanata.service            — the kanata keyboard remapper
-//   - kanata-layer-watcher.service — the fcitx5-driven layout layer switcher
-//
-// The switch is the whole point: one throw starts both units, throw it back and
-// both stop. Live status drives the switch and the bar icon.
-//
-// The Layout row picks Programmer Dvorak (DVP) or plain Dvorak. It repoints the
-// active.kbd symlink and restarts kanata.service.
-//
-// When the units are absent the popup shows a Setup row instead. Setup writes
-// the user files and starts the units at once, then opens a terminal for the
-// one step that needs root.
 Panel {
   id: root
   moduleName: "godkin.omarchy-dvp-qwerty-toggle"
@@ -31,16 +16,19 @@ Panel {
   readonly property int refreshIntervalSec: setting("refreshIntervalSec", 5)
 
   readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "")
-  readonly property string installScript: pluginDir + "install.sh"
+  readonly property string installScript: pluginDir + "resources/install.sh"
   readonly property string unitDir: Quickshell.env("HOME") + "/.config/systemd/user/"
   readonly property string kanataDir: Quickshell.env("HOME") + "/.config/kanata/"
   readonly property string activeConfig: kanataDir + "active.kbd"
+  readonly property string setupMarker: kanataDir + ".auto-setup-done"
 
   property bool kanataActive: false
   property bool watcherActive: false
   property bool busy: false
   property bool installed: false
   property bool installing: false
+  property bool autoSetupAttempted: false
+  property bool autoSetup: false
   property string layout: "dvp-qwerty"
   property bool layoutBusy: false
   property string currentIm: ""
@@ -69,8 +57,15 @@ Panel {
 
   function runSetup() {
     if (installing) return
+    autoSetup = false
     installing = true
     setupUserProc.running = true
+  }
+
+  function maybeAutoSetup() {
+    if (autoSetupAttempted || installing || autoProbe.running) return
+    autoSetupAttempted = true
+    autoProbe.running = true
   }
 
   function readLayout() {
@@ -120,6 +115,18 @@ Panel {
     command: ["test", "-f", root.unitDir + root.kanataUnit, "-a", "-f", root.unitDir + root.watcherUnit]
     onExited: function(exitCode) {
       root.installed = exitCode === 0
+      if (exitCode !== 0) root.maybeAutoSetup()
+    }
+  }
+
+  Process {
+    id: autoProbe
+    command: ["test", "-e", root.setupMarker]
+    onExited: function(exitCode) {
+      if (exitCode === 0 || root.installed) return
+      root.autoSetup = true
+      root.installing = true
+      setupUserProc.running = true
     }
   }
 
@@ -139,9 +146,17 @@ Panel {
         console.warn("kanata-setup: user step failed with exit code " + exitCode)
         return
       }
-      Quickshell.execDetached(["omarchy-launch-terminal", "sudo", root.installScript, "--root-only"])
+      markerProc.running = true
+      if (!root.autoSetup)
+        Quickshell.execDetached(["omarchy-launch-terminal", "sudo", "-E", root.installScript, "--root-only"])
       root.refresh()
+      if (!installProbe.running) installProbe.running = true
     }
+  }
+
+  Process {
+    id: markerProc
+    command: ["install", "-D", "/dev/null", root.setupMarker]
   }
 
   Process {

@@ -106,9 +106,11 @@ Then place it in the bar if it did not land automatically:
 omarchy bar move godkin.omarchy-dvp-qwerty-toggle --section right
 ```
 
-Open the popup and press **Set up** if Kanata is not set up yet. Log out and
-back in once, so the `input` and `uinput` group change reaches the keyboard, and
-start a graphical session (Hyprland).
+The widget writes the user files and starts the units the first time it loads,
+so `--enable` does the user step for you. Press **Set up** in the popup to run
+the user step again, or to run the root step in a terminal. Log out and back in
+once, so the `input` and `uinput` group change reaches the keyboard, and start a
+graphical session (Hyprland).
 
 Run `resources/install.sh` on its own when you prefer the terminal:
 
