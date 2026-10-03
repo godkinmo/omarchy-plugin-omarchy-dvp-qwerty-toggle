@@ -33,8 +33,7 @@
 ;; base   : Programmer Dvorak, unshifted.
 ;; shift  : Programmer Dvorak, shifted (real Shift held; emits US base keys).
 ;; ctrl   : physical QWERTY (used while Ctrl is held, for shortcuts).
-;; qwerty : physical QWERTY (fcitx5 plain US).
-;; cangjie: physical QWERTY (fcitx5 Cangjie3).
+;; qwerty : physical QWERTY (every fcitx5 IM except English US).
 (deflayer base
   S-4     S-7     lbrc    S-lbrc  S-rbrc  S-9     eql     S-8     S-0     S-eql   rbrc    S-1     S-3     bspc
   tab     scln    comm    Period  p       y       f       g       c       r       l       Slash   S-2     bksl
@@ -60,14 +59,6 @@
 )
 
 (deflayer qwerty
-  grv     1       2       3       4       5       6       7       8       9       0       min     eql     bspc
-  tab     q       w       e       r       t       y       u       i       o       p       lbrc    rbrc    bksl
-  caps    a       s       d       f       g       h       j       k       l       scln    apo     ret
-  lsft    z       x       c       v       b       n       m       comm    Period  Slash   rsft
-  lctl    lmet    lalt            spc             ralt    rmet    rctl
-)
-
-(deflayer cangjie
   grv     1       2       3       4       5       6       7       8       9       0       min     eql     bspc
   tab     q       w       e       r       t       y       u       i       o       p       lbrc    rbrc    bksl
   caps    a       s       d       f       g       h       j       k       l       scln    apo     ret

@@ -1,5 +1,5 @@
 [Unit]
-Description=kanata layer switcher based on fcitx5 active input method
+Description=kanata Dvorak layer when fcitx5 input method is English US
 Documentation=https://github.com/jtroo/kanata
 PartOf=graphical-session.target
 After=graphical-session.target kanata.service

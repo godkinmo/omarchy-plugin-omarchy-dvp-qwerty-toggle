@@ -43,7 +43,8 @@ required for the toggle.
   - `ctrl` / `qwerty` — physical QWERTY pass-through, activated while holding
     Ctrl / Super / Alt (via `multi <mod> (layer-while-held <layer>)`, which
     keeps the real modifier pressed *and* switches the layer).
-  - `cangjie` — physical QWERTY pass-through for Cangjie.
+  - `qwerty` also stands in for every other input method: when the active IM is
+    not English US, kanata passes physical QWERTY through.
 - **watcher** (`kanata-layer-watcher.sh`) polls `fcitx5-remote -n` every 0.05 s
   and tells kanata which layer to use over kanata's TCP IPC (port 17000),
   using newline-delimited JSON: `{"ChangeLayer":{"new":"<layer>"}}`.
@@ -114,19 +115,20 @@ Run `resources/install.sh` on its own when you prefer the terminal:
 ```
 
 The fcitx5 input method profile is not part of this plugin. Configure fcitx5
-with a `keyboard-us` and a `cangjie3` input method, then the watcher switches
-kanata between the English layout and QWERTY as you change input method.
+with a `keyboard-us` input method and any Chinese input methods you use, then the
+watcher switches kanata between Dvorak for English US and QWERTY passthrough for
+every other input method as you change it.
 
 ## Configuration
 
-Add two input methods to fcitx5: a plain US `keyboard-us` for English and
-`cangjie3` for Chinese. Because fcitx5 applies no Dvorak layout, kanata's output
-passes through unchanged.
+Add a plain US `keyboard-us` input method to fcitx5 for English, plus any others
+(Cangjie, Quick, and so on). Because fcitx5 applies no Dvorak layout, kanata's
+output passes through unchanged.
 
 | Input method | kanata layer |
 |--------------|--------------|
 | `keyboard-us` | Dvorak (`DVP` or plain) |
-| `cangjie3` | physical QWERTY |
+| anything else (Cangjie, Quick, ...) | physical QWERTY |
 
 ## Usage
 
@@ -135,7 +137,7 @@ graphical session. Switch input methods with your fcitx5 hotkey (usually
 `Super+Space` or `Ctrl+Space`):
 
 - **`keyboard-us`** → Dvorak (`DVP` or plain)
-- **`cangjie3`** → physical QWERTY (Cangjie)
+- **Cangjie, Quick, any other IM** → physical QWERTY
 
 Keyboard shortcuts behave normally at all times because holding Ctrl / Super /
 Alt switches to QWERTY for the duration of the press.

@@ -5,13 +5,12 @@
 # Watches fcitx5's active input method and tells kanata to switch to the
 # matching keyboard layer over its TCP IPC interface.
 #
-# fcitx5's English IM (keyboard-us) uses a plain US layout, so kanata must
-# apply Programmer Dvorak when it is active. Cangjie expects physical QWERTY,
-# so kanata must pass keys through when cangjie3 is active.
+# When fcitx5's active IM is English US (keyboard-us), kanata applies the
+# Programmer Dvorak layout. Every other IM (Cangjie, Quick, Chinese and so on)
+# expects physical QWERTY, so kanata passes keys through.
 #
-#   keyboard-us  -> base    (Programmer Dvorak)
-#   cangjie3     -> cangjie (physical QWERTY, so Cangjie sees QWERTY keys)
-#   anything else -> base
+#   keyboard-us  -> base   (Programmer Dvorak)
+#   anything else -> qwerty (physical QWERTY passthrough)
 #
 # kanata MUST be started with a TCP port (e.g. --port 17000).
 set -u
@@ -121,8 +120,8 @@ force_layer() {
 
 layer_for_im() {
     case "$1" in
-        cangjie3)  echo "cangjie" ;;
-        *)         echo "base" ;;
+        keyboard-us)  echo "base" ;;
+        *)            echo "qwerty" ;;
     esac
 }
 
