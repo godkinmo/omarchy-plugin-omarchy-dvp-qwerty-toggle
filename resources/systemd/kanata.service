@@ -8,7 +8,7 @@ ConditionEnvironment=WAYLAND_DISPLAY
 [Service]
 Type=simple
 # kanata_cmd_allowed enables the `cmd`/IPC features needed by the layer watcher.
-ExecStart=/usr/bin/kanata_cmd_allowed -c @HOME@/.config/kanata/kanata.kbd --port 17000
+ExecStart=/usr/bin/kanata_cmd_allowed -c @HOME@/.config/kanata/active.kbd --port 17000
 Restart=always
 RestartSec=2
 [Install]

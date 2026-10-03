@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "godkin",
   "license": "MIT",
-  "description": "Install and toggle the kanata.service and kanata-layer-watcher.service user units behind the Programmer Dvorak (DVP) + QWERTY setup, from the Omarchy bar, with live status.",
+  "description": "Install and toggle the kanata.service and kanata-layer-watcher.service user units behind the Dvorak + QWERTY setup, and pick Programmer Dvorak or plain Dvorak, from the Omarchy bar, with live status.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Kanata",
-    "description": "Install and toggle the kanata keyboard remapper and its DVP/QWERTY layer watcher.",
+    "description": "Install and toggle the kanata keyboard remapper and its layout layer watcher, and choose the Dvorak variant.",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right",

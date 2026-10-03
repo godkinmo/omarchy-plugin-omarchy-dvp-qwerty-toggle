@@ -40,7 +40,11 @@ aur_install() {
 install_user_files() {
   step "Linking kanata config into ${KANATA_DIR}"
   mkdir -p "${KANATA_DIR}"
-  ln -sf "${RESOURCES}/kanata.kbd" "${KANATA_DIR}/kanata.kbd"
+  ln -sf "${RESOURCES}/dvp-qwerty.kbd" "${KANATA_DIR}/dvp-qwerty.kbd"
+  ln -sf "${RESOURCES}/dvorak-qwerty.kbd" "${KANATA_DIR}/dvorak-qwerty.kbd"
+  if [[ ! -e "${KANATA_DIR}/active.kbd" ]]; then
+    ln -sf "${KANATA_DIR}/dvp-qwerty.kbd" "${KANATA_DIR}/active.kbd"
+  fi
   ln -sf "${RESOURCES}/kanata-layer-watcher.sh" "${KANATA_DIR}/kanata-layer-watcher.sh"
   chmod +x "${RESOURCES}/kanata-layer-watcher.sh"
   ok "kanata config linked"

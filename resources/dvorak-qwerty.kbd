@@ -1,0 +1,76 @@
+(defcfg
+  process-unmapped-keys yes
+  linux-continue-if-no-devs-found yes
+)
+
+(defsrc
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lmet lalt           spc            ralt rmet rctl
+)
+
+;; Shift: hold a REAL shift modifier AND switch to the Dvorak `shift` layer.
+;; Holding real shift is required so chords involving Shift behave correctly at
+;; the OS level (e.g. Shift+Super+Enter, Ctrl+Shift+arrows, ...). The `shift`
+;; layer therefore emits the *unshifted* US keys that real Shift turns into the
+;; Dvorak shifted characters. Standard Dvorak keeps the US number row, thus the
+;; number row and brackets follow the US shifted symbols.
+;; Ctrl/Super/Alt: hold a real modifier AND switch to a QWERTY layer so that
+;; shortcuts like Ctrl+C/V/Z or Super+D use physical QWERTY positions.
+(defalias
+  lshft (multi lsft (layer-while-held shift))
+  rshft (multi rsft (layer-while-held shift))
+  lctl (multi lctl (layer-while-held ctrl))
+  rctl (multi rctl (layer-while-held ctrl))
+  lmet (multi lmet (layer-while-held qwerty))
+  rmet (multi rmet (layer-while-held qwerty))
+  lalt (multi lalt (layer-while-held qwerty))
+  ralt (multi ralt (layer-while-held qwerty))
+)
+
+;; base   : Dvorak, unshifted.
+;; shift  : Dvorak, shifted (real Shift held; emits US base keys).
+;; ctrl   : physical QWERTY (used while Ctrl is held, for shortcuts).
+;; qwerty : physical QWERTY (fcitx5 plain US).
+;; cangjie: physical QWERTY (fcitx5 Cangjie3).
+(deflayer base
+  grv     1       2       3       4       5       6       7       8       9       0       lbrc    rbrc    bspc
+  tab     apo     comm    Period  p       y       f       g       c       r       l       Slash   eql     bksl
+  caps    a       o       e       u       i       d       h       t       n       s       min     ret
+  @lshft  scln    q       j       k       x       b       m       w       v       z       @rshft
+  @lctl   @lmet   @lalt           spc             @ralt   @rmet   @rctl
+)
+
+(deflayer shift
+  grv     1       2       3       4       5       6       7       8       9       0       lbrc    rbrc    bspc
+  tab     S-apo   S-comm  S-Period S-p    S-y     S-f     S-g     S-c     S-r     S-l     S-Slash S-eql  bksl
+  caps    S-a     S-o     S-e     S-u     S-i     S-d     S-h     S-t     S-n     S-s     S-min   ret
+  @lshft  S-scln  S-q     S-j     S-k     S-x     S-b     S-m     S-w     S-v     S-z     @rshft
+  @lctl   @lmet   @lalt           spc             @ralt   @rmet   @rctl
+)
+
+(deflayer ctrl
+  grv     1       2       3       4       5       6       7       8       9       0       min     eql     bspc
+  tab     q       w       e       r       t       y       u       i       o       p       lbrc    rbrc    bksl
+  caps    a       s       d       f       g       h       j       k       l       scln    apo     ret
+  lsft    z       x       c       v       b       n       m       comm    Period  Slash   rsft
+  lctl    lmet    lalt            spc             ralt    rmet    rctl
+)
+
+(deflayer qwerty
+  grv     1       2       3       4       5       6       7       8       9       0       min     eql     bspc
+  tab     q       w       e       r       t       y       u       i       o       p       lbrc    rbrc    bksl
+  caps    a       s       d       f       g       h       j       k       l       scln    apo     ret
+  lsft    z       x       c       v       b       n       m       comm    Period  Slash   rsft
+  lctl    lmet    lalt            spc             ralt    rmet    rctl
+)
+
+(deflayer cangjie
+  grv     1       2       3       4       5       6       7       8       9       0       min     eql     bspc
+  tab     q       w       e       r       t       y       u       i       o       p       lbrc    rbrc    bksl
+  caps    a       s       d       f       g       h       j       k       l       scln    apo     ret
+  lsft    z       x       c       v       b       n       m       comm    Period  Slash   rsft
+  lctl    lmet    lalt            spc             ralt    rmet    rctl
+)
