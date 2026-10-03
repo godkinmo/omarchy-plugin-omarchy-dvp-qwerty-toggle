@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "godkin.omarchy-dvp-qwerty-toggle",
-  "name": "Kanata Service Toggle",
-  "version": "1.0.0",
+  "name": "Kanata Dvorak-Qwerty Toggle",
+  "version": "1.0.1",
   "author": "godkin",
   "license": "MIT",
   "description": "Install and toggle the kanata.service and kanata-layer-watcher.service user units behind the Dvorak + QWERTY setup, and pick Programmer Dvorak or plain Dvorak, from the Omarchy bar, with live status.",
