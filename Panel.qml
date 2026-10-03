@@ -13,6 +13,10 @@ import qs.Ui
 //
 // The switch is the whole point: one throw starts both units, throw it back and
 // both stop. Live status drives the switch and the bar icon.
+//
+// When the units are absent the popup shows a Setup row instead. Setup writes
+// the user files and starts the units at once, then opens a terminal for the
+// one step that needs root.
 Panel {
   id: root
   moduleName: "godkin.omarchy-dvp-qwerty-toggle"
@@ -23,9 +27,15 @@ Panel {
   readonly property string watcherUnit: setting("watcherUnit", "kanata-layer-watcher.service")
   readonly property int refreshIntervalSec: setting("refreshIntervalSec", 5)
 
+  readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "")
+  readonly property string installScript: pluginDir + "install.sh"
+  readonly property string unitDir: Quickshell.env("HOME") + "/.config/systemd/user/"
+
   property bool kanataActive: false
   property bool watcherActive: false
   property bool busy: false
+  property bool installed: false
+  property bool installing: false
 
   readonly property bool bothActive: kanataActive && watcherActive
   readonly property string stateText: busy
@@ -46,6 +56,12 @@ Panel {
       ? ["systemctl", "--user", "stop", kanataUnit, watcherUnit]
       : ["systemctl", "--user", "start", kanataUnit, watcherUnit]
     controlProc.running = true
+  }
+
+  function runSetup() {
+    if (installing) return
+    installing = true
+    setupUserProc.running = true
   }
 
   IpcHandler {
@@ -74,6 +90,35 @@ Panel {
   }
 
   Process {
+    id: installProbe
+    command: ["test", "-f", root.unitDir + root.kanataUnit, "-a", "-f", root.unitDir + root.watcherUnit]
+    onExited: function(exitCode) {
+      root.installed = exitCode === 0
+    }
+  }
+
+  Process {
+    id: setupUserProc
+    command: [root.installScript, "--user-only"]
+    stdout: StdioCollector { waitForEnd: true }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        if (text.trim() !== "") console.warn("kanata-setup: " + text.trim())
+      }
+    }
+    onExited: function(exitCode) {
+      root.installing = false
+      if (exitCode !== 0) {
+        console.warn("kanata-setup: user step failed with exit code " + exitCode)
+        return
+      }
+      Quickshell.execDetached(["omarchy-launch-terminal", "sudo", root.installScript, "--root-only"])
+      root.refresh()
+    }
+  }
+
+  Process {
     id: controlProc
     stderr: StdioCollector {
       waitForEnd: true
@@ -92,7 +137,10 @@ Panel {
     running: true
     repeat: true
     triggeredOnStart: true
-    onTriggered: root.refresh()
+    onTriggered: {
+      root.refresh()
+      if (!installProbe.running) installProbe.running = true
+    }
   }
 
   BarIconButton {
@@ -163,6 +211,36 @@ Panel {
           foreground: Color.popups.text
           accent: Color.accent
           onToggled: root.toggleServices()
+        }
+      }
+
+      Item {
+        id: setupRow
+        width: parent.width
+        visible: !root.installed
+        height: visible ? Math.max(setupLabel.implicitHeight, setupButton.implicitHeight) : 0
+
+        Text {
+          id: setupLabel
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          width: parent.width - setupButton.implicitWidth - Style.spacing.xl
+          text: "Kanata is not set up yet"
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+          color: Qt.darker(Color.popups.text, 1.4)
+          wrapMode: Text.WordWrap
+        }
+
+        Button {
+          id: setupButton
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          text: root.installing ? "Setting up…" : "Set up"
+          enabled: !root.installing
+          foreground: Color.popups.text
+          accent: Color.accent
+          onClicked: root.runSetup()
         }
       }
     }

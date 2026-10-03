@@ -1,0 +1,19 @@
+[Unit]
+Description=kanata layer switcher based on fcitx5 active input method
+Documentation=https://github.com/jtroo/kanata
+PartOf=graphical-session.target
+After=graphical-session.target kanata.service
+# fcitx5-remote talks to fcitx5 over D-Bus, so wait for the input method.
+After=omarchy-fcitx5.service
+ConditionEnvironment=WAYLAND_DISPLAY
+
+[Service]
+Type=simple
+ExecStart=@HOME@/.config/kanata/kanata-layer-watcher.sh
+Restart=always
+RestartSec=2
+# stderr is routed to the journal, and the watcher logs its layer switches there.
+StandardError=journal
+
+[Install]
+WantedBy=graphical-session.target
