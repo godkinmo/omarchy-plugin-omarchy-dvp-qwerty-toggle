@@ -205,6 +205,10 @@ edit the linked file under `~/.config/kanata/` directly.
   encodes this correctly.
 - **No Cangjie IM in fcitx5**: install `fcitx5-table-extra` and reload fcitx5
   (`fcitx5-remote -r`).
+- **A key repeats after you toggle Kanata on**:
+  kanata used to hold the keyboard for two seconds before it was ready, so a key
+  pressed in that window lost its release by the time kanata started. The unit
+  runs kanata with `--nodelay` to remove that window.
 
 ## Layer reference (Programmer Dvorak)
 

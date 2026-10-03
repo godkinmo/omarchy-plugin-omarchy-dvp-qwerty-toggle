@@ -8,7 +8,10 @@ ConditionEnvironment=WAYLAND_DISPLAY
 [Service]
 Type=simple
 # kanata_cmd_allowed enables the `cmd`/IPC features needed by the layer watcher.
-ExecStart=/usr/bin/kanata_cmd_allowed -c @HOME@/.config/kanata/active.kbd --port 17000
+# --nodelay removes kanata's 2s startup delay: that window grabs the keyboard
+# before kanata is ready, so a key pressed during it loses its release and
+# auto-repeats.
+ExecStart=/usr/bin/kanata_cmd_allowed --nodelay -c @HOME@/.config/kanata/active.kbd --port 17000
 Restart=always
 RestartSec=2
 [Install]
