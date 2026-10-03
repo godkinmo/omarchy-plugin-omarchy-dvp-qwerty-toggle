@@ -43,6 +43,8 @@ Panel {
   property bool installing: false
   property string layout: "dvp-qwerty"
   property bool layoutBusy: false
+  property string currentIm: ""
+  property bool imIsEnglish: currentIm === "keyboard-us"
 
   readonly property bool bothActive: kanataActive && watcherActive
   readonly property string stateText: busy
@@ -73,6 +75,10 @@ Panel {
 
   function readLayout() {
     if (!layoutProbe.running) layoutProbe.running = true
+  }
+
+  function readInputMethod() {
+    if (!imProbe.running) imProbe.running = true
   }
 
   function selectLayout(name) {
@@ -165,6 +171,17 @@ Panel {
   }
 
   Process {
+    id: imProbe
+    command: ["fcitx5-remote", "-n"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        root.currentIm = String(text).trim()
+      }
+    }
+  }
+
+  Process {
     id: layoutProc
     stderr: StdioCollector {
       waitForEnd: true
@@ -205,6 +222,7 @@ Panel {
     onTriggered: {
       root.refresh()
       root.readLayout()
+      root.readInputMethod()
       if (!installProbe.running) installProbe.running = true
     }
   }
@@ -232,7 +250,8 @@ Panel {
     contentWidth: panel.fittedContentWidth(
       Math.max(Style.space(250),
         titleLabel.implicitWidth + Style.spacing.xl + showSwitch.implicitWidth,
-        layoutLabel.implicitWidth + Style.spacing.xl + layoutButtons.implicitWidth)
+        layoutLabel.implicitWidth + Style.spacing.xl + layoutButtons.implicitWidth,
+        imLabel.implicitWidth + Style.spacing.xl + imValue.implicitWidth)
           + panel.padding * 2 + Border.left(panel.borderSpec) + Border.right(panel.borderSpec))
     contentHeight: menuColumn.implicitHeight + panel.padding * 2
 
@@ -307,10 +326,49 @@ Panel {
           foreground: Color.popups.text
           accent: Color.accent
           options: [
-            { value: "dvp-qwerty", label: "DVP" },
-            { value: "dvorak-qwerty", label: "Dvorak" }
+            { value: "dvorak-qwerty", label: "Dvorak" },
+            { value: "dvp-qwerty", label: "DVP" }
           ]
           onChanged: function(v) { root.selectLayout(v) }
+        }
+      }
+
+      Item {
+        id: imRow
+        width: parent.width
+        height: Math.max(imLabel.implicitHeight, imValue.implicitHeight)
+
+        Text {
+          id: imLabel
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Current method"
+          font.family: Style.font.family
+          font.pixelSize: Style.font.body
+          color: Color.popups.text
+        }
+
+        Row {
+          id: imValue
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: Style.spacing.xs
+
+          Rectangle {
+            width: Style.font.caption * 0.6
+            height: width
+            radius: width / 2
+            anchors.verticalCenter: parent.verticalCenter
+            color: root.imIsEnglish ? Color.accent : Qt.darker(Color.popups.text, 1.4)
+          }
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.currentIm === "" ? "unknown" : root.currentIm
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+            color: Color.popups.text
+          }
         }
       }
 
@@ -349,6 +407,7 @@ Panel {
   onOpenedChanged: if (opened) {
     refresh()
     readLayout()
+    readInputMethod()
     if (!installProbe.running) installProbe.running = true
   }
 }
