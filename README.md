@@ -27,8 +27,8 @@ required for the toggle.
 | Normal English typing | **Dvorak** (`DVP` or plain, from the Layout row) |
 | Hold **Shift** | A **real Shift** modifier + Dvorak shifted characters (so Shift+Super+Enter etc. work) |
 | Hold **Ctrl** / **Super** / **Alt** | Raw **physical QWERTY** (so Ctrl+C/V/Z, Super+D, Alt+Tab work) |
-| fcitx5 **Cangjie3** active | **Physical QWERTY** (the Cangjie table is built for QWERTY positions, not Dvorak) |
-| English ↔ Cangjie switch | Automatic (the watcher follows fcitx5's active input method) |
+| Any **non-English** IM active | **Physical QWERTY** (those tables are built for QWERTY positions, not Dvorak) |
+| English ↔ other IM switch | Automatic (the watcher follows fcitx5's active input method) |
 
 ## How it works
 
@@ -47,8 +47,8 @@ required for the toggle.
   - `ctrl` / `qwerty` — physical QWERTY pass-through, activated while holding
     Ctrl / Super / Alt (via `multi <mod> (layer-while-held <layer>)`, which
     keeps the real modifier pressed *and* switches the layer).
-  - `qwerty` also stands in for every other input method: when the active IM is
-    not English US, kanata passes physical QWERTY through.
+  - `qwerty` also stands in for every other input method: unless the active IM is
+    exactly English US, kanata passes physical QWERTY through.
 - **watcher** (`kanata-layer-watcher.sh`) polls `fcitx5-remote -n` every 0.05 s
   and tells kanata which layer to use over kanata's TCP IPC (port 17000),
   using newline-delimited JSON: `{"ChangeLayer":{"new":"<layer>"}}`.
@@ -83,7 +83,7 @@ the `input` and `uinput` groups, and writes the udev rule for `/dev/uinput`.
 - `kanata-bin` (AUR) — provides `/usr/bin/kanata_cmd_allowed`. The plain
   `kanata` binary is compiled **without** the `cmd` feature, which the watcher
   relies on; the plugin installs the `cmd_allowed` binary.
-- `fcitx5` + `fcitx5-table-extra` (Cangjie3 table).
+- `fcitx5` + `fcitx5-table-extra` (for the Chinese tables, such as Cangjie).
 - A **Wayland** compositor (Hyprland) and the systemd **user** manager.
 - Your user must be in the `input` and `uinput` groups (for `/dev/input` and
   `/dev/uinput`). The plugin installs the udev rule and the group membership.
@@ -121,18 +121,20 @@ Run `resources/install.sh` on its own when you prefer the terminal:
 The fcitx5 input method profile is not part of this plugin. Configure fcitx5
 with a `keyboard-us` input method and any Chinese input methods you use, then the
 watcher switches kanata between Dvorak for English US and QWERTY passthrough for
-every other input method as you change it.
+every other input method as you change it. Only the exact `keyboard-us` name gets
+Dvorak; every other IM name gets QWERTY.
 
 ## Configuration
 
 Add a plain US `keyboard-us` input method to fcitx5 for English, plus any others
 (Cangjie, Quick, and so on). Because fcitx5 applies no Dvorak layout, kanata's
-output passes through unchanged.
+output passes through unchanged. Only a fcitx5 IM whose name is exactly
+`keyboard-us` selects Dvorak; every other name selects physical QWERTY.
 
 | Input method | kanata layer |
 |--------------|--------------|
 | `keyboard-us` | Dvorak (`DVP` or plain) |
-| anything else (Cangjie, Quick, ...) | physical QWERTY |
+| anything else (Cangjie, Quick, ...) | physical QWERTY (the original layout) |
 
 ## Usage
 
@@ -141,7 +143,7 @@ graphical session. Switch input methods with your fcitx5 hotkey (usually
 `Super+Space` or `Ctrl+Space`):
 
 - **`keyboard-us`** → Dvorak (`DVP` or plain)
-- **Cangjie, Quick, any other IM** → physical QWERTY
+- **any other IM** (not `keyboard-us`) → physical QWERTY, the original layout
 
 Keyboard shortcuts behave normally at all times because holding Ctrl / Super /
 Alt switches to QWERTY for the duration of the press.
@@ -209,7 +211,7 @@ edit the linked file under `~/.config/kanata/` directly.
   in DVP the physical `r t y u i o p` keys type lowercase `p y f g c r l`
   normally and uppercase only with Shift. The bundled `dvp-qwerty.kbd` already
   encodes this correctly.
-- **No Cangjie IM in fcitx5**: install `fcitx5-table-extra` and reload fcitx5
+- **No Chinese IM in fcitx5**: install `fcitx5-table-extra` and reload fcitx5
   (`fcitx5-remote -r`).
 - **A key repeats after you toggle Kanata on**:
   kanata used to hold the keyboard for two seconds before it was ready, so a key
