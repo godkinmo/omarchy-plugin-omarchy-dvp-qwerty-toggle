@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Panel {
@@ -21,11 +22,14 @@ Panel {
   readonly property string kanataDir: Quickshell.env("HOME") + "/.config/kanata/"
   readonly property string activeConfig: kanataDir + "active.kbd"
   readonly property string setupMarker: kanataDir + ".auto-setup-done"
+  readonly property string kanataBin: "/usr/bin/kanata_cmd_allowed"
+  readonly property string udevRule: "/etc/udev/rules.d/99-input.rules"
 
   property bool kanataActive: false
   property bool watcherActive: false
   property bool busy: false
   property bool installed: false
+  property bool rootReady: false
   property bool installing: false
   property bool autoSetupAttempted: false
   property bool autoSetup: false
@@ -35,6 +39,7 @@ Panel {
   property bool imIsEnglish: currentIm === "keyboard-us"
 
   readonly property bool bothActive: kanataActive && watcherActive
+  readonly property bool needsSetup: !installed || !rootReady
   readonly property string stateText: busy
     ? "Kanata: switching…"
     : (bothActive ? "Kanata on" : (kanataActive || watcherActive ? "Kanata partial" : "Kanata off"))
@@ -93,7 +98,7 @@ Panel {
     function hide(): void { root.close() }
     function togglePanel(): void { root.toggle() }
     function toggle(): void { root.toggleServices() }
-    function refresh(): void { root.broadcast("refresh") }
+    function refresh(): void { root.refresh() }
     function layout(name: string): void { root.selectLayout(name) }
   }
 
@@ -116,6 +121,14 @@ Panel {
     onExited: function(exitCode) {
       root.installed = exitCode === 0
       if (exitCode !== 0) root.maybeAutoSetup()
+    }
+  }
+
+  Process {
+    id: rootProbe
+    command: ["test", "-x", root.kanataBin, "-a", "-f", root.udevRule]
+    onExited: function(exitCode) {
+      root.rootReady = exitCode === 0
     }
   }
 
@@ -151,6 +164,7 @@ Panel {
         Quickshell.execDetached(["omarchy-launch-terminal", "sudo", "-E", root.installScript, "--root-only"])
       root.refresh()
       if (!installProbe.running) installProbe.running = true
+      if (!rootProbe.running) rootProbe.running = true
     }
   }
 
@@ -239,6 +253,7 @@ Panel {
       root.readLayout()
       root.readInputMethod()
       if (!installProbe.running) installProbe.running = true
+      if (!rootProbe.running) rootProbe.running = true
     }
   }
 
@@ -292,14 +307,14 @@ Panel {
             text: "Kanata services"
             font.family: Style.font.family
             font.pixelSize: Style.font.body
-            color: Color.popups.text
+            color: Commons.Color.popups.text
           }
 
           Text {
             text: root.stateText
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
-            color: Qt.darker(Color.popups.text, 1.4)
+            color: Qt.darker(Commons.Color.popups.text, 1.4)
           }
         }
 
@@ -309,8 +324,8 @@ Panel {
           anchors.verticalCenter: parent.verticalCenter
           checked: root.bothActive
           busy: root.busy
-          foreground: Color.popups.text
-          accent: Color.accent
+          foreground: Commons.Color.popups.text
+          accent: Commons.Color.accent
           onToggled: root.toggleServices()
         }
       }
@@ -328,7 +343,7 @@ Panel {
           text: "Layout"
           font.family: Style.font.family
           font.pixelSize: Style.font.body
-          color: Color.popups.text
+          color: Commons.Color.popups.text
         }
 
         ButtonGroup {
@@ -338,8 +353,8 @@ Panel {
           enabled: !root.layoutBusy
           opacity: root.layoutBusy ? 0.5 : 1
           value: root.layout
-          foreground: Color.popups.text
-          accent: Color.accent
+          foreground: Commons.Color.popups.text
+          accent: Commons.Color.accent
           options: [
             { value: "dvorak-qwerty", label: "Dvorak" },
             { value: "dvp-qwerty", label: "DVP" }
@@ -360,7 +375,7 @@ Panel {
           text: "Current method"
           font.family: Style.font.family
           font.pixelSize: Style.font.body
-          color: Color.popups.text
+          color: Commons.Color.popups.text
         }
 
         Row {
@@ -374,7 +389,7 @@ Panel {
             height: width
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
-            color: root.imIsEnglish ? Color.accent : Qt.darker(Color.popups.text, 1.4)
+            color: root.imIsEnglish ? Commons.Color.accent : Qt.darker(Commons.Color.popups.text, 1.4)
           }
 
           Text {
@@ -382,7 +397,7 @@ Panel {
             text: root.currentIm === "" ? "unknown" : root.currentIm
             font.family: Style.font.family
             font.pixelSize: Style.font.body
-            color: Color.popups.text
+            color: Commons.Color.popups.text
           }
         }
       }
@@ -390,7 +405,7 @@ Panel {
       Item {
         id: setupRow
         width: parent.width
-        visible: !root.installed
+        visible: root.needsSetup
         height: visible ? Math.max(setupLabel.implicitHeight, setupButton.implicitHeight) : 0
 
         Text {
@@ -398,10 +413,10 @@ Panel {
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
           width: parent.width - setupButton.implicitWidth - Style.spacing.xl
-          text: "Kanata is not set up yet"
+          text: root.installed ? "Root setup is not complete" : "Kanata is not set up yet"
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
-          color: Qt.darker(Color.popups.text, 1.4)
+          color: Qt.darker(Commons.Color.popups.text, 1.4)
           wrapMode: Text.WordWrap
         }
 
@@ -411,8 +426,8 @@ Panel {
           anchors.verticalCenter: parent.verticalCenter
           text: root.installing ? "Setting up…" : "Set up"
           enabled: !root.installing
-          foreground: Color.popups.text
-          accent: Color.accent
+          foreground: Commons.Color.popups.text
+          accent: Commons.Color.accent
           onClicked: root.runSetup()
         }
       }
@@ -424,5 +439,6 @@ Panel {
     readLayout()
     readInputMethod()
     if (!installProbe.running) installProbe.running = true
+    if (!rootProbe.running) rootProbe.running = true
   }
 }
