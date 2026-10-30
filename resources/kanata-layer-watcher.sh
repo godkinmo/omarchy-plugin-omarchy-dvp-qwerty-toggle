@@ -125,6 +125,97 @@ layer_for_im() {
     esac
 }
 
+KANATA_UNIT="kanata.service"
+KANATA_DEVICE_NAME="kanata"
+KEY_A_BIT=$((1 << 30))
+GUARD_INTERVAL_SEC=2
+GUARD_MISS_LIMIT=2
+GUARD_RESTART_COOLDOWN_SEC=60
+LAST_GUARD_SEC=0
+LAST_RESTART_SEC=0
+MISS_COUNT=0
+MISSED_PREVIOUS=""
+KANATA_PID=""
+
+kanata_pid() {
+    local pid process_name=""
+    if [[ -n "$KANATA_PID" ]]; then
+        { read -r process_name < "/proc/$KANATA_PID/comm"; } 2>/dev/null
+        if [[ "$process_name" == "${KANATA_DEVICE_NAME}"* ]]; then
+            printf '%s\n' "$KANATA_PID"
+            return 0
+        fi
+    fi
+    pid="$(systemctl --user show --property MainPID --value "$KANATA_UNIT")"
+    [[ "$pid" =~ ^[1-9][0-9]*$ ]] || return 1
+    KANATA_PID="$pid"
+    printf '%s\n' "$pid"
+}
+
+is_keyboard_node() {
+    local node="$1" device name capabilities last_word
+    device="/sys/class/input/${node##*/}/device"
+    [[ -r "$device/name" && -r "$device/capabilities/key" ]] || return 1
+    name="$(< "$device/name")"
+    [[ "$name" == "$KANATA_DEVICE_NAME" ]] && return 1
+    capabilities="$(< "$device/capabilities/key")"
+    last_word="${capabilities##* }"
+    (( 16#${last_word:-0} & KEY_A_BIT ))
+}
+
+ungrabbed_keyboards() {
+    local pid held_fd target node
+    local -A held=()
+    pid="$(kanata_pid)" || return 0
+    for held_fd in /proc/"$pid"/fd/*; do
+        target="$(readlink "$held_fd" 2>/dev/null)"
+        [[ "$target" == /dev/input/event* ]] && held["$target"]=1
+    done
+    for node in /dev/input/event*; do
+        is_keyboard_node "$node" || continue
+        [[ -n "${held[$node]:-}" ]] && continue
+        printf '%s\n' "$node"
+    done
+}
+
+restart_kanata() {
+    echo "kanata-layer-watcher: kanata holds no grab on [$1]; restarting $KANATA_UNIT" >&2
+    [[ -n "$IPC_FD" ]] && exec {IPC_FD}>&-
+    IPC_FD=""
+    CUR_LAYER=""
+    KANATA_PID=""
+    systemctl --user restart "$KANATA_UNIT" || return 1
+    connect_kanata || return 1
+    force_layer "$(layer_for_im "$(fcitx5-remote -n 2>/dev/null)")" || CUR_LAYER=""
+}
+
+guard_keyboard_grabs() {
+    local now missed
+    printf -v now '%(%s)T' -1
+    (( now - LAST_GUARD_SEC >= GUARD_INTERVAL_SEC )) || return 0
+    LAST_GUARD_SEC="$now"
+
+    missed="$(ungrabbed_keyboards)"
+    if [[ -z "$missed" ]]; then
+        MISS_COUNT=0
+        MISSED_PREVIOUS=""
+        return 0
+    fi
+    if [[ "$missed" == "$MISSED_PREVIOUS" ]]; then
+        MISS_COUNT=$((MISS_COUNT + 1))
+    else
+        MISS_COUNT=1
+        MISSED_PREVIOUS="$missed"
+    fi
+    (( MISS_COUNT >= GUARD_MISS_LIMIT )) || return 0
+    (( now - LAST_RESTART_SEC >= GUARD_RESTART_COOLDOWN_SEC )) || return 0
+
+    LAST_RESTART_SEC="$now"
+    MISS_COUNT=0
+    MISSED_PREVIOUS=""
+    restart_kanata "${missed//$'\n'/, }"
+}
+
 # Initial sync: connect, then force the layer so it is applied even if kanata
 # booted straight into that same layer.
 connect_kanata || exit 1
@@ -135,5 +226,6 @@ force_layer "$(layer_for_im "$im")" || CUR_LAYER=""
 while true; do
     im="$(fcitx5-remote -n 2>/dev/null)"
     send_layer "$(layer_for_im "$im")"
+    guard_keyboard_grabs
     sleep 0.05
 done

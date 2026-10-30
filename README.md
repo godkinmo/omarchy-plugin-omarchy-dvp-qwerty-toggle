@@ -52,6 +52,13 @@ required for the toggle.
 - **watcher** (`kanata-layer-watcher.sh`) polls `fcitx5-remote -n` every 0.05 s
   and tells kanata which layer to use over kanata's TCP IPC (port 17000),
   using newline-delimited JSON: `{"ChangeLayer":{"new":"<layer>"}}`.
+- **grab guard** — the same watcher checks every 2 s that kanata holds a grab on
+  each keyboard under `/dev/input`. kanata's own hotplug watch can miss a
+  keyboard that reconnects on a new event node (a Bluetooth keyboard after the
+  idle disconnect, for example); such a keyboard reaches the compositor with no
+  remapping while the unit still reads `active`. When the same set of keyboards
+  stays ungrabbed across two checks, the watcher restarts `kanata.service` and
+  re-applies the layer. One restart per minute at most.
 - **fcitx5** applies **no** Dvorak layout. Its English IM is a *plain US*
   `keyboard-us`, so kanata's Dvorak output passes straight through. (A
   `keyboard-us-dvp` fcitx5 IM would double-apply Dvorak and produce garbage — do
@@ -219,6 +226,13 @@ edit the linked file under `~/.config/kanata/` directly.
   kanata used to hold the keyboard for two seconds before it was ready, so a key
   pressed in that window lost its release by the time kanata started. The unit
   runs kanata with `--nodelay` to remove that window.
+- **Typing stays QWERTY after the computer sat idle**:
+  a wireless keyboard drops its Bluetooth link when idle and comes back on a new
+  event node that kanata's hotplug watch misses, so the keys bypass kanata
+  entirely. The grab guard inside the watcher restarts `kanata.service` on its
+  own. If the output is still QWERTY, run `systemctl --user restart
+  kanata-layer-watcher.service` and read its log for
+  `kanata holds no grab on`.
 
 ## Layer reference (Programmer Dvorak)
 
